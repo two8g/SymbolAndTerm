@@ -33,15 +33,15 @@ public class LaTeXTermFactory {
         int n = 0;
         for (String sid : sids) {
             n++;
-            String title = getTitle(sid).replaceAll("\\s*","");
+            String title = getTitle(sid).replaceAll("\\s*", "");
             if (title == null)
                 continue;
-            System.out.println("findLatexFormular:"+n);
+            System.out.println("findLatexFormular:" + n);
             findLatexFormular(title);
         }
         Collections.sort(LATEX_FORMULAR);
         saveFormularFile();
-        for(String formular : LATEX_FORMULAR){
+        for (String formular : LATEX_FORMULAR) {
             findTermsProcess(formular);
         }
         Collections.sort(LATEX_TERMS);
@@ -60,6 +60,12 @@ public class LaTeXTermFactory {
 
     private static void saveFormularFile() {
         String filePath = "latex_fromular";
+        if (new File(filePath).exists())
+            try {
+                FileUtils.forceDeleteOnExit(new File(filePath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         for (String formular : LATEX_FORMULAR) {
             try {
                 FileUtils.write(new File(filePath), formular + "\n", "UTF-8", true);
@@ -75,6 +81,12 @@ public class LaTeXTermFactory {
 
     private static void saveTermsFile() {
         String filePath = "latex_terms";
+        if (new File(filePath).exists())
+            try {
+                FileUtils.forceDeleteOnExit(new File(filePath));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         for (String term : LATEX_TERMS) {
             try {
                 FileUtils.write(new File(filePath), term + "\n", "UTF-8", true);
@@ -91,18 +103,18 @@ public class LaTeXTermFactory {
      * 3.百分数 ^([-\+]{0,1}[0-9]+)(\.[0-9]*)?%$
      * 4.简单分式 frac{[^{}]+}{{[^{}]+}}
      * 5.简单根式 sqrt{[^{}]+}|sqrt\[^([1-9])[0-9]*\]{[^{}]+}
-     * 6.三角形 △[A-Z]{3,3}|△[A-Z]_{\d}[A-Z]_{\d}[A-Z]_{\d}|△[A-Z][′″‴][A-Z][′″‴][A-Z][′″‴]|△[A-Z]^{[′″‴]}[A-Z]^{[′″‴]}[A-Z]^{[′″‴]}
+     * 6.三角形 △[A-Z]{3,3}|△[A-Z]_{\d}[A-Z]_{\d}[A-Z]_{\d}|△[A-Z][\u0032-\u0034][A-Z][\u0032-\u0034][A-Z][\u0032-\u0034]|△[A-Z]^{[\u0032-\u0034]}[A-Z]^{[\u0032-\u0034]}[A-Z]^{[\u0032-\u0034]}
      * 7.比例 [a-z]+|^([-\+]{0,1}[0-9]+)(\.[0-9]*)?$):[a-z]+|^([-\+]{0,1}[0-9]+)(\.[0-9]*)?$)
      * 8.
      */
 
-    private static String[] regexes = {"[0-9\\.a-zA-Z\\+-\\*\u00F7\u2220=\\(\\)\\|\\^\\{\\}]+",
-            "[\\(\\[]([a-z]+|^([-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$),([a-z]+|^([-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$)[\\)\\]]",
-            "^([-\\+]{0,1}[0-9]+)(\\.[0-9]*)?%$",
-            "frac{[^{}]+}{{[^{}]+}}",
-            "sqrt{[^{}]+}|sqrt\\[^([1-9])[0-9]*\\]{[^{}]+}",
-            "\u25b3[A-Z]{3,3}|\u25b3[A-Z]_{\\d}[A-Z]_{\\d}[A-Z]_{\\d}|\u25b3[A-Z][′″‴][A-Z][′″‴][A-Z][′″‴]|\u25b3[A-Z]^{[′″‴]}[A-Z]^{[′″‴]}[A-Z]^{[′″‴]}",
-            "[a-z]+|^([-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$):[a-z]+|^([-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$)"};
+    private static String[] regexes = {"[0-9\\.a-zA-Z\\+\\-\\*\u00F7\u2220=\\(\\)\\|\\^\\{\\}]+",
+            "[\\(\\[]([a-z]+|^([\\-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$),([a-z]+|^([\\-\\+]{0,1}[0-9]+)(\\.[0-9]*)?$)[\\)\\]]",
+            "^([\\-\\+]{0,1}[0-9]+)(\\.[0-9]*)?%$",
+            "frac\\{[^\\{\\}]+\\}\\{[^\\{\\}]+\\}",
+            "sqrt\\{[^\\{\\}]+\\}|sqrt\\[^([1-9])[0-9]*\\]\\{[^\\{\\}]+\\}",
+            "\u25b3[A-Z]{3,3}|\u25b3[A-Z]_\\{\\d\\}[A-Z]_\\{\\d\\}[A-Z]_\\{\\d\\}|\u25b3[A-Z][\u0032-\u0034][A-Z][\u0032-\u0034][A-Z][\u0032-\u0034]|\u25b3[A-Z]\\^\\{[\u0032-\u0034]\\}[A-Z]\\^\\{[\u0032-\u0034]\\}[A-Z]\\^\\{[\u0032-\u0034]\\}",
+            "[a-z]+|^([\\-\\+]{0,1}[0-9]+)(\\.[0-9]*)?:[a-z]+|^([\\-\\+]{0,1}[0-9]+)(\\.[0-9]*)?"};
 
     private static void simpleRegex(String input) {
         for (String regex : regexes)
@@ -129,7 +141,7 @@ public class LaTeXTermFactory {
     private static List<String> getSids() {
         List<String> sids = new ArrayList<String>();
         Connection con = null;
-        String SQL = "select top 1000 SID from dbo.TB_SUBJECT WHERE STATUS=4 ORDER BY NEWID()";
+        String SQL = "select SID from dbo.TB_SUBJECT WHERE STATUS=4 ORDER BY NEWID()";
         PreparedStatement ps = null;
         ResultSet rs = null;
         try {
@@ -199,7 +211,7 @@ public class LaTeXTermFactory {
                     e.printStackTrace();
                 }
 
-            return MappingFilter.strfilter(HtmlStripFilter.strfilter(title),"unify");
+            return MappingFilter.strfilter(HtmlStripFilter.strfilter(title), "unify");
         }
     }
 }
